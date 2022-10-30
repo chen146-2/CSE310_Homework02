@@ -37,11 +37,56 @@ for ts, buf in pcap:
     elif tcp.flags==16 and tcp.sport != receiver_port:
         if (len(flow[tcp.sport])==0):
             flow[tcp.sport]['win']=tcp.win
+            flow[tcp.sport]['throughput']=0
             flow[tcp.sport][tcp.seq]=tcp.ack
-            print(flow)
-        elif(len(flow[tcp.sport])<3):    
+        elif(len(flow[tcp.sport])<5):    
             flow[tcp.sport][tcp.seq]=tcp.ack
-            print(flow)
+            flow[tcp.sport]['throughput']+=len(tcp)
+        else:
+            flow[tcp.sport]['throughput'] += len(tcp)
+    #elif tcp.flags==24 and tcp.sport != receiver_port:
+    #    flow[tcp.sport]['throughput'] += len(tcp.data)
     count+=1
-print('overall flow:\n' + str(flow))
+
+# this part is to print out the flows (source ip addresses, destination ip addresses, source port numbers, destination port numbers, and throughputs)
+
+print('''
+    ------------------------------------------------------------------------------------------
+    | TCP FLOW | SOURCE IP ADDR. | DESTINATION IP ADDR. | SRC PORT | DEST. PORT | THROUGHPUT |
+    ------------------------------------------------------------------------------------------''')
+index = 1
+for value in flow:
+    print('    |    {ind}     | {source_ip}  |     {dest_ip}    |  {src_port}   |     {dest_port}     | {throughput} |'.format(ind=index, 
+        source_ip=sender, dest_ip=receiver, src_port=value, dest_port=receiver_port, throughput=0))
+    index+=1
+print('    ------------------------------------------------------------------------------------------\n')
+
+# this part is to print out each flow and the first two transactions after the TCP connection is set up (from sender to receiver)
+# this includes the values of the sequence number, acknowledgement numbers, and window sizes
+index=1
+for value in flow:
+    keyList = list(flow[value].keys())
+    window = flow[value][keyList[0]]
+    seqNum01 = keyList[2]
+    ackNum01 = flow[value][seqNum01]
+    seqNum02 = keyList[3]
+    ackNum02 = flow[value][seqNum02]
+    ackNum03 = keyList[4]
+    print(f'''
+                FIRST TWO TRANSACTIONS AFTER CONNECTION SETUP FOR FLOW {index}
+    ------------------------------------------------------------------------------------------
+    |          SOURCE  ==>  DESTINATION         |   (SEQ NUMBER, ACK NUMBER)  | WINDOW SIZE |
+    ------------------------------------------------------------------------------------------
+    | {sender}:{value} ==> {receiver}:{receiver_port} | ( {seqNum01} , {ackNum01} ) |      {window}      |
+    | {receiver}:{receiver_port} ==> {sender}:{value} | ( {ackNum01} , {seqNum02} ) |      {window}      |
+    ------------------------------------------------------------------------------------------
+    | {sender}:{value} ==> {receiver}:{receiver_port} | ( {seqNum02} , {ackNum02} ) |      {window}      |
+    | {receiver}:{receiver_port} ==> {sender}:{value} | ( {ackNum02} , {ackNum03} ) |      {window}      |
+    ------------------------------------------------------------------------------------------\n
+    ''')
+    index+=1
+
+print('--- throughput ---')
+for value in flow:
+    print(str(value) + ' ==> ' + str(flow[value]['throughput']))
 f.close()
