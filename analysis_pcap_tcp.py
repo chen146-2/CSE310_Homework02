@@ -40,8 +40,7 @@ for ts, buf in pcap2:
             congestion[tcp.dport].append(0)
 
 f2.close()
-for value in congestion:
-    print(congestion[value])
+
 for ts, buf in pcap:
     eth = dpkt.ethernet.Ethernet(buf)
     ip = eth.data
@@ -59,37 +58,32 @@ for ts, buf in pcap:
                 flow[tcp.sport]['throughput'] +=len(tcp)
         elif ts < times[tcp.sport][1] and len(tcp.data)>0:
             flow[tcp.sport]['throughput'] += len(tcp)
-        if(len(congestion[tcp.sport])<3):
-            continue
-        elif (congestion[tcp.sport][2]==0 and len(congestion[tcp.sport])<6 and len(tcp.data)>0):
-            congestion[tcp.sport][2]=ts
-            rtts[tcp.sport][tcp.seq]=1
-            congestion[tcp.sport].append(1)
-        elif (congestion[tcp.sport][2]<=ts and ts <= congestion[tcp.sport][2]+congestion[tcp.sport][0]) and len(tcp.data)>0:
-            vals = list(rtts.keys())
-            exists = False
-            for val in vals:
-                if tcp.seq == val:
-                    exists=True
-            if not exists:
-                congestion[tcp.sport][len(congestion[tcp.sport])-1]+=1
-        elif (congestion[tcp.sport][2]>ts or ts > congestion[tcp.sport][2]+congestion[tcp.sport][0]):
-            congestion[tcp.sport][2]=0
-            for value in rtts:
-                rtts[value]={}
     elif tcp.flags !=16 and tcp.sport!= receiver_port:
         if ts < times[tcp.sport][1] and len(tcp.data)>0:
             flow[tcp.sport]['throughput']+=len(tcp)
+    if tcp.flags!=2 and tcp.sport != receiver_port:
+        if len(tcp)>0:
+            if(len(congestion[tcp.sport])<3):
+                continue
+            elif (congestion[tcp.sport][2]==0 and len(congestion[tcp.sport])<6 and len(tcp.data)>0):
+                congestion[tcp.sport][2]=ts
+                congestion[tcp.sport].append(1)
+            elif (congestion[tcp.sport][2]<=ts and ts <= congestion[tcp.sport][2]+congestion[tcp.sport][0]) and len(tcp.data)>0:
+                congestion[tcp.sport][len(congestion[tcp.sport])-1]+=1
+            elif (congestion[tcp.sport][2]>ts or ts > congestion[tcp.sport][2]+congestion[tcp.sport][0]):
+                congestion[tcp.sport][2]=0
     count+=1
-for value in congestion:
-    print(congestion[value])
+#for value in congestion:
+#    print(congestion[value])
 # this part is to calculate the throughputs for each flow
 
 throughputs=[]
 for value in times:
     throughputs.append(times[value][1]-times[value][0])
 count=0
+print('---- throughputs -----\n')
 for value in flow:
+    #print('data: ' + str(flow[value]['throughput']) + ', time: ' + str(throughputs[count]))
     throughputs[count]=(flow[value]['throughput']/throughputs[count])
     count+=1
 
@@ -138,4 +132,20 @@ for value in flow:
     ''')
     index+=1
 
+# printing part b values - congestion windows and other information
+
+print('''
+    ----------------------------------------------------------------------------------------------------
+    |                                                                                                  |
+    |                           PROGRAMMING ASSIGNMENT 02 - PART B - CHEN146                           |
+    |                                                                                                  |
+    ----------------------------------------------------------------------------------------------------
+    |                                   CONGESTION WINDOWS                                             |
+    ----------------------------------------------------------------------------------------------------
+    |       PORT       |         CWND 01         |         CWND 02         |          CWND 03          |
+    ----------------------------------------------------------------------------------------------------''')
+
+for value in congestion:
+    print('    |       {port}      |           {cwnd01}            |          {cwnd02}             |             {cwnd03}            |'.format(port=value,cwnd01=congestion[value][3],cwnd02=congestion[value][4],cwnd03=congestion[value][5]))
+    print('    ----------------------------------------------------------------------------------------------------')
 f.close()
