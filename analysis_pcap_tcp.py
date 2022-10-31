@@ -1,22 +1,21 @@
 import dpkt
+import os
+pcapFile=os.path.join(os.getcwd(), 'assignment2.pcap')
 
 # THE FOLLOWING CODE IS FOR THE PROGRAMMING ASSIGNMENT 02 (CSE 310 - PROF. JAIN)
 
-f = open('/Users/kevin/Downloads/assignment2.pcap','rb')
+f = open(pcapFile,'rb')
 pcap = dpkt.pcap.Reader(f)
-f2 = open('/Users/kevin/Downloads/assignment2.pcap','rb')
+f2 = open(pcapFile,'rb')
 pcap2 = dpkt.pcap.Reader(f2)
 count = 0
 flow = {}
 times={}
 congestion={}
-rtt=0
-rtts={}
-start=0
-rtt_done =False
 sender='130.245.145.12'
 receiver='128.208.2.198'
 receiver_port = 80
+duplicates={}
 for ts, buf in pcap2:
     eth = dpkt.ethernet.Ethernet(buf)
     ip = eth.data
@@ -25,19 +24,23 @@ for ts, buf in pcap2:
         times[tcp.sport]= []
         congestion[tcp.sport]=[]
         times[tcp.sport].append(ts)
+        duplicates[tcp.sport]={}
     elif tcp.flags==17 and tcp.sport == receiver_port:
         times[tcp.dport].append(ts)
     elif tcp.flags==24 and tcp.sport != receiver_port:
         if (len(congestion[tcp.sport])<2):
             congestion[tcp.sport].append(ts)
             congestion[tcp.sport].append(False)
-            rtts[tcp.sport]={}
     elif tcp.flags==16 and tcp.sport == receiver_port:
         if (not congestion[tcp.dport][1]):
             congestion[tcp.dport][0] = ts - congestion[tcp.dport][0]
-            rtt = congestion[tcp.dport][0]
             congestion[tcp.dport][1]=True
             congestion[tcp.dport].append(0)
+        dups = list(duplicates[tcp.dport].keys())
+        if not tcp.ack in dups:
+            duplicates[tcp.dport][tcp.ack]=0
+        else:
+            duplicates[tcp.dport][tcp.ack]+=1
 
 f2.close()
 
@@ -73,17 +76,15 @@ for ts, buf in pcap:
             elif (congestion[tcp.sport][2]>ts or ts > congestion[tcp.sport][2]+congestion[tcp.sport][0]):
                 congestion[tcp.sport][2]=0
     count+=1
-#for value in congestion:
-#    print(congestion[value])
+
 # this part is to calculate the throughputs for each flow
 
 throughputs=[]
 for value in times:
     throughputs.append(times[value][1]-times[value][0])
 count=0
-print('---- throughputs -----\n')
+
 for value in flow:
-    #print('data: ' + str(flow[value]['throughput']) + ', time: ' + str(throughputs[count]))
     throughputs[count]=(flow[value]['throughput']/throughputs[count])
     count+=1
 
@@ -140,6 +141,8 @@ print('''
     |                           PROGRAMMING ASSIGNMENT 02 - PART B - CHEN146                           |
     |                                                                                                  |
     ----------------------------------------------------------------------------------------------------
+
+    ----------------------------------------------------------------------------------------------------
     |                                   CONGESTION WINDOWS                                             |
     ----------------------------------------------------------------------------------------------------
     |       PORT       |         CWND 01         |         CWND 02         |          CWND 03          |
@@ -147,5 +150,23 @@ print('''
 
 for value in congestion:
     print('    |       {port}      |           {cwnd01}            |          {cwnd02}             |             {cwnd03}            |'.format(port=value,cwnd01=congestion[value][3],cwnd02=congestion[value][4],cwnd03=congestion[value][5]))
+    print('    ----------------------------------------------------------------------------------------------------')
+
+print('''
+    ----------------------------------------------------------------------------------------------------
+    |                                       RETRANSMISSIONS                                            |
+    ----------------------------------------------------------------------------------------------------
+    |       PORT       |         DUE TO TIMEOUT          |          DUE TO TRIPLE DUPLICATE ACKS       |
+    ----------------------------------------------------------------------------------------------------''')
+
+for value in duplicates:
+    it = 0
+    tr = 0 
+    for value1 in duplicates[value]:
+        if (duplicates[value][value1]>=1):
+            it+=1
+        if(duplicates[value][value1]>=85):
+            tr+=1
+    print(f'    |       {value}      |               {it}                 |                 {tr}                           |')
     print('    ----------------------------------------------------------------------------------------------------')
 f.close()
