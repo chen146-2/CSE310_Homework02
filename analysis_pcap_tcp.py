@@ -1,5 +1,6 @@
 import dpkt
 
+# THE FOLLOWING CODE IS FOR THE PROGRAMMING ASSIGNMENT 02 (CSE 310 - PROF. JAIN)
 
 f = open('/Users/kevin/Downloads/assignment2.pcap','rb')
 pcap = dpkt.pcap.Reader(f)
@@ -8,6 +9,11 @@ pcap2 = dpkt.pcap.Reader(f2)
 count = 0
 flow = {}
 times={}
+congestion={}
+rtt=0
+rtts={}
+start=0
+rtt_done =False
 sender='130.245.145.12'
 receiver='128.208.2.198'
 receiver_port = 80
@@ -17,19 +23,31 @@ for ts, buf in pcap2:
     tcp = ip.data
     if tcp.flags==2:
         times[tcp.sport]= []
+        congestion[tcp.sport]=[]
         times[tcp.sport].append(ts)
     elif tcp.flags==17 and tcp.sport == receiver_port:
         times[tcp.dport].append(ts)
+    elif tcp.flags==24 and tcp.sport != receiver_port:
+        if (len(congestion[tcp.sport])<2):
+            congestion[tcp.sport].append(ts)
+            congestion[tcp.sport].append(False)
+            rtts[tcp.sport]={}
+    elif tcp.flags==16 and tcp.sport == receiver_port:
+        if (not congestion[tcp.dport][1]):
+            congestion[tcp.dport][0] = ts - congestion[tcp.dport][0]
+            rtt = congestion[tcp.dport][0]
+            congestion[tcp.dport][1]=True
+            congestion[tcp.dport].append(0)
+
 f2.close()
+for value in congestion:
+    print(congestion[value])
 for ts, buf in pcap:
     eth = dpkt.ethernet.Ethernet(buf)
     ip = eth.data
     tcp = ip.data
-
     if tcp.flags==2:
         flow[tcp.sport] = {}
-        #times[tcp.sport] = []
-        #times[tcp.sport].append(ts)
         flow[tcp.sport]['throughput']=0
     elif tcp.flags==16 and tcp.sport != receiver_port:
         if (len(flow[tcp.sport])==1):
@@ -41,28 +59,47 @@ for ts, buf in pcap:
                 flow[tcp.sport]['throughput'] +=len(tcp)
         elif ts < times[tcp.sport][1] and len(tcp.data)>0:
             flow[tcp.sport]['throughput'] += len(tcp)
+        if(len(congestion[tcp.sport])<3):
+            continue
+        elif (congestion[tcp.sport][2]==0 and len(congestion[tcp.sport])<6 and len(tcp.data)>0):
+            congestion[tcp.sport][2]=ts
+            rtts[tcp.sport][tcp.seq]=1
+            congestion[tcp.sport].append(1)
+        elif (congestion[tcp.sport][2]<=ts and ts <= congestion[tcp.sport][2]+congestion[tcp.sport][0]) and len(tcp.data)>0:
+            vals = list(rtts.keys())
+            exists = False
+            for val in vals:
+                if tcp.seq == val:
+                    exists=True
+            if not exists:
+                congestion[tcp.sport][len(congestion[tcp.sport])-1]+=1
+        elif (congestion[tcp.sport][2]>ts or ts > congestion[tcp.sport][2]+congestion[tcp.sport][0]):
+            congestion[tcp.sport][2]=0
+            for value in rtts:
+                rtts[value]={}
     elif tcp.flags !=16 and tcp.sport!= receiver_port:
         if ts < times[tcp.sport][1] and len(tcp.data)>0:
             flow[tcp.sport]['throughput']+=len(tcp)
     count+=1
-
+for value in congestion:
+    print(congestion[value])
 # this part is to calculate the throughputs for each flow
 
 throughputs=[]
-print('----------- times -------------')
 for value in times:
-    print(times[value][1]-times[value][0])
     throughputs.append(times[value][1]-times[value][0])
 count=0
-print('-------- throughput -----------')
 for value in flow:
-    print(flow[value]['throughput'])
     throughputs[count]=(flow[value]['throughput']/throughputs[count])
     count+=1
 
 # this part is to print out the flows (source ip addresses, destination ip addresses, source port numbers, destination port numbers, and throughputs)
 
 print('''
+    ----------------------------------------------------------------------------------------------------
+    |                                                                                                  |
+    |                           PROGRAMMING ASSIGNMENT 02 - PART A - CHEN146                           |
+    |                                                                                                  |
     ----------------------------------------------------------------------------------------------------
     | TCP FLOW | SOURCE IP ADDR. | DESTINATION IP ADDR. | SRC PORT | DEST. PORT |      THROUGHPUT      |
     ----------------------------------------------------------------------------------------------------''')
