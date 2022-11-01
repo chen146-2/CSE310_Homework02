@@ -9,6 +9,7 @@
 (i) High-Level Summary
     --> the high-level summary of the analysis_pcap_tcp.py code
     --> includes how I estimated the answers to the questions in Part A and Part B
+
 (ii) Instructions
     --> the instructions on how to run my code
 
@@ -114,3 +115,39 @@ From what was just printed, that was the Part A and the expected values that the
     ----------------------------------------------------------------------------------------------------
 
 The way that I estimated the congestion window sizes for Part B is by first calculating the RTT for each flow by finding the difference between the timestamp where we encounter a [FIN, ACK] flag, where tcp.flags==17, and a [PSH, ACK] flag. By calculating this difference, it gives us the RTT we desire. Then, I iterate through the pcap file and for the first valid packet sent from the sender ([43498, 43500, 43502]) to receiver (port 80), I would set the starting timestamp to that timestamp and keep iterating count for each respective port's congestion windows till the current timestamp is less than or equal to (<=) the starting timestamp plus the RTT. This will produce the number of packets sent from sender to receiver within a given RTT. 
+
+## Instructions:
+
+This part is where I will be giving you instructions on how to run my program. When you retrieve my zip folder, there will be three files, the first one is the main python program that you will be running, which is named **analysis_pcap_tcp.py**. A second file that you will find in the zip folder **assignment2.pcap**, which will be used within the program for testing and outputting the results. A third file is named **README.md**, which contains information such as a high-level summary and the instructions to take to successfully run the program I created.
+
+This is one approach to running the program:
+    
+    (1) First, open an IDE. I would recommend the use of the platform called Visual Studio Code, which is free and easy to use.
+
+    (2) When you are in Visual Studio Code, open up the folder where all three files are located.
+
+    (3) Double click on the file labeled 'analysis_pcap_tcp.py'
+
+    (4) You can right click within the python program to open up the possible operations to the current program file
+
+    (5) Click on 'Run Python File in Terminal'
+
+    (6) You should be able to have the desired output and stats presented to you in the terminal/console.
+
+This is another approach to running my program:
+
+    (1) Open up Visual Studio Code
+
+    (2) Open up the folder where all three files are located
+
+    (3) Open up the terminal within the folder in VS Code using the possible shortcuts:
+        --> Ctrl + ` 
+        --> Ctrl + Shift + `
+        --> View > Terminal (From menu commands)
+        --> Terminal > New Terminal (From menu commands)
+
+    (4) Type into terminal the following:
+
+        **python analysis_pcap_tcp.py**
+
+    (5) You should be able to have the desired output and stats presented to you in the terminal/console.
