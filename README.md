@@ -128,11 +128,20 @@ This is one approach to running the program:
 
     (3) Double click on the file labeled 'analysis_pcap_tcp.py'
 
-    (4) You can right click within the python program to open up the possible operations to the current program file
+    (4) Open up the terminal by using the possible shortcuts:
+        --> Ctrl + ` 
+        --> Ctrl + Shift + `
+        --> View > Terminal (From menu commands)
+        --> Terminal > New Terminal (From menu commands)
+    (5) Type into terminal the following:
 
-    (5) Click on 'Run Python File in Terminal'
+        pip install dpkt
 
-    (6) You should be able to have the desired output and stats presented to you in the terminal/console.
+    (6) You can right click within the python program to open up the possible operations to the current program file
+
+    (7) Click on 'Run Python File in Terminal'
+
+    (8) You should be able to have the desired output and stats presented to you in the terminal/console.
 
 This is another approach to running my program:
 
@@ -148,6 +157,10 @@ This is another approach to running my program:
 
     (4) Type into terminal the following:
 
+        pip install dpkt
+
+    (5) Type into terminal the following:
+
         python analysis_pcap_tcp.py
 
-    (5) You should be able to have the desired output and stats presented to you in the terminal/console.
+    (6) You should be able to have the desired output and stats presented to you in the terminal/console.
