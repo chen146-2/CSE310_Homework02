@@ -82,8 +82,8 @@ for ts, buf in pcap:
 throughputs=[]
 for value in times:
     throughputs.append(times[value][1]-times[value][0])
-count=0
 
+count=0
 for value in flow:
     throughputs[count]=(flow[value]['throughput']/throughputs[count])
     count+=1
