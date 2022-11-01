@@ -148,6 +148,6 @@ This is another approach to running my program:
 
     (4) Type into terminal the following:
 
-        **python analysis_pcap_tcp.py**
+        python analysis_pcap_tcp.py
 
     (5) You should be able to have the desired output and stats presented to you in the terminal/console.
